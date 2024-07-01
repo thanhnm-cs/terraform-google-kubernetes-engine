@@ -101,16 +101,18 @@ module "gke" {
   region     = var.region
   zones      = slice(var.zones, 0, 1)
 
-  network                 = module.gcp-network.network_name
-  subnetwork              = module.gcp-network.subnets_names[0]
-  ip_range_pods           = var.ip_range_pods_name
-  ip_range_services       = var.ip_range_services_name
-  create_service_account  = true
-  enable_private_endpoint = false
-  enable_private_nodes    = true
-  master_ipv4_cidr_block  = "172.16.0.0/28"
-  deletion_protection     = false
-
+  network                              = module.gcp-network.network_name
+  subnetwork                           = module.gcp-network.subnets_names[0]
+  ip_range_pods                        = var.ip_range_pods_name
+  ip_range_services                    = var.ip_range_services_name
+  enable_cost_allocation               = true
+  monitoring_enable_managed_prometheus = true
+  create_service_account               = true
+  enable_private_endpoint              = false
+  enable_private_nodes                 = true
+  master_ipv4_cidr_block               = "172.16.0.0/28"
+  deletion_protection                  = false
+  remove_default_node_pool             = true
   master_authorized_networks = [
     {
       cidr_block   = data.google_compute_subnetwork.subnetwork.ip_cidr_range
@@ -121,14 +123,101 @@ module "gke" {
       display_name = "allow all"
     },
   ]
+
+  node_pools = [
+    {
+      name         = "pool-01"
+      machine_type = "e2-medium"
+      # node_locations            = "${var.region}-b,${var.region}-a"
+      autoscaling  = true
+      node_count   = 0
+      min_count    = 0
+      max_count    = 1
+      disk_type    = "pd-standard"
+      disk_size_gb = 10
+      auto_upgrade = true
+      # service_account = var.compute_engine_service_account
+    },
+    {
+      name         = "pool-02"
+      machine_type = "e2-medium"
+      #node_locations            = "${var.region}-b,${var.region}-a"
+      autoscaling  = true
+      node_count   = 0
+      min_count    = 0
+      max_count    = 1
+      disk_type    = "pd-standard"
+      disk_size_gb = 10
+      auto_upgrade = true
+      # service_account = var.compute_engine_service_account
+    },
+  ]
+
+  node_pools_labels = {
+    all = {
+      all-pools-example = true
+    }
+    pool-01 = {
+      pool-01-example = true
+    }
+    pool-02 = {
+      pool-02-example1 = true
+      pool-02-example2 = true
+    }
+  }
+
+  node_pools_taints = {
+    all = [
+      {
+        key    = "all-pools-example"
+        value  = true
+        effect = "PREFER_NO_SCHEDULE"
+      },
+    ]
+    pool-01 = [
+      {
+        key    = "pool-01-example"
+        value  = true
+        effect = "PREFER_NO_SCHEDULE"
+      },
+    ]
+    pool-02 = [
+      {
+        key    = "pool-02-example"
+        value  = true
+        effect = "PREFER_NO_SCHEDULE"
+      },
+      {
+        key    = "pool-02-example2"
+        value  = true
+        effect = "PREFER_NO_SCHEDULE"
+      },
+    ]
+  }
+
+  node_pools_tags = {
+    all = [
+      "all-node-example",
+    ]
+    pool-01 = [
+      "pool-01-example",
+    ]
+    pool-02 = [
+      "pool-02-example1",
+      "pool-02-example2",
+
+    ]
+  }
+
+
 }
 
 
 
 resource "kubernetes_pod" "nginx-example" {
   metadata {
-    name = "nginx-example"
-
+    name      = "nginx-example"
+    namespace = "proxy"
     labels = {
       maintained_by = "terraform"
       app           = "nginx-example"
