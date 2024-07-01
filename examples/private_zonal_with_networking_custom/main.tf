@@ -129,8 +129,8 @@ module "gke" {
       name         = "pool-01"
       machine_type = "e2-medium"
       # node_locations            = "${var.region}-b,${var.region}-a"
-      autoscaling  = true
-      node_count   = 0
+      autoscaling = true
+      # node_count   = 0
       min_count    = 0
       max_count    = 1
       disk_type    = "pd-standard"
@@ -142,8 +142,8 @@ module "gke" {
       name         = "pool-02"
       machine_type = "e2-medium"
       #node_locations            = "${var.region}-b,${var.region}-a"
-      autoscaling  = true
-      node_count   = 0
+      autoscaling = true
+      # node_count   = 0
       min_count    = 0
       max_count    = 1
       disk_type    = "pd-standard"
@@ -155,7 +155,8 @@ module "gke" {
 
   node_pools_labels = {
     all = {
-      all-pools-example = true
+      all-pools-example  = true
+      all-pools-example2 = true
     }
     pool-01 = {
       pool-01-example = true
@@ -167,32 +168,32 @@ module "gke" {
   }
 
   node_pools_taints = {
-    all = [
-      {
-        key    = "all-pools-example"
-        value  = true
-        effect = "PREFER_NO_SCHEDULE"
-      },
-    ]
-    pool-01 = [
-      {
-        key    = "pool-01-example"
-        value  = true
-        effect = "PREFER_NO_SCHEDULE"
-      },
-    ]
-    pool-02 = [
-      {
-        key    = "pool-02-example"
-        value  = true
-        effect = "PREFER_NO_SCHEDULE"
-      },
-      {
-        key    = "pool-02-example2"
-        value  = true
-        effect = "PREFER_NO_SCHEDULE"
-      },
-    ]
+    # all = [
+    #   {
+    #     key    = "all-pools-example"
+    #     value  = true
+    #     effect = "PREFER_NO_SCHEDULE"
+    #   },
+    # ]
+    # pool-01 = [
+    #   {
+    #     key    = "pool-01-example"
+    #     value  = true
+    #     effect = "PREFER_NO_SCHEDULE"
+    #   },
+    # ]
+    # pool-02 = [
+    #   {
+    #     key    = "pool-02-example"
+    #     value  = true
+    #     effect = "PREFER_NO_SCHEDULE"
+    #   },
+    #   {
+    #     key    = "pool-02-example2"
+    #     value  = true
+    #     effect = "PREFER_NO_SCHEDULE"
+    #   },
+    # ]
   }
 
   node_pools_tags = {
@@ -212,22 +213,88 @@ module "gke" {
 
 }
 
+locals {
+  namespace = "proxy"
+}
 
+resource "kubernetes_namespace" "nginx-example" {
+  metadata {
+    name = local.namespace
+  }
+}
+
+# resource "kubernetes_replication_controller" "nginx-example" {
+#   metadata {
+#     name = "nginx-example"
+#   }
+#   spec {
+#     selector = {
+#       "app" = "nginx-example"
+#     }
+#     replicas = 2
+#     template {
+#       metadata {
+#         name = "nginx-example"
+#       }
+#       spec {
+
+#       }
+#     }
+#   }
+# }
 
 resource "kubernetes_pod" "nginx-example" {
   metadata {
     name      = "nginx-example"
-    namespace = "proxy"
+    namespace = local.namespace
     labels = {
       maintained_by = "terraform"
       app           = "nginx-example"
     }
   }
-
   spec {
     container {
       image = "nginx:latest"
       name  = "nginx-example"
+    }
+    # toleration {
+    #   effect = "PreferNoSchedule"
+    #   key    = "all-pools-example"
+    #   value  = "true"
+    # }
+    # toleration {
+    #   effect = "PreferNoSchedule"
+    #   key    = "pool-01-example"
+    #   value  = "true"
+    # }
+    # node_selector = {
+    #   "pool-02-example"    = "true"
+    #   "all-pools-example2" = "true"
+
+    # }
+    affinity {
+      node_affinity {
+        preferred_during_scheduling_ignored_during_execution {
+          weight = 60
+          preference {
+            match_expressions {
+              key      = "pool-02-example2"
+              operator = "In"
+              values   = ["true"]
+            }
+          }
+        }
+        preferred_during_scheduling_ignored_during_execution {
+          weight = 40
+          preference {
+            match_expressions {
+              key      = "pool-01-example"
+              operator = "In"
+              values   = ["true"]
+            }
+          }
+        }
+      }
     }
   }
 
