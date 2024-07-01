@@ -16,6 +16,7 @@
 
 variable "project_id" {
   description = "The project ID to host the cluster in"
+  default     = "blogs-f7fe6"
 }
 
 variable "cluster_name" {
@@ -25,11 +26,13 @@ variable "cluster_name" {
 
 variable "region" {
   description = "The region to host the cluster in"
+  default     = "europe-west3"
 }
 
 variable "zones" {
   type        = list(string)
   description = "The zone to host the cluster in (required if is a zonal cluster)"
+  default     = ["europe-west3-a"]
 }
 
 variable "network" {
