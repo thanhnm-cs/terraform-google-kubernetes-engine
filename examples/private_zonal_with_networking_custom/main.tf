@@ -60,6 +60,30 @@ module "gcp-network" {
   }
 }
 
+resource "google_compute_router" "router" {
+  name    = "nat-router"
+  network = module.gcp-network.network_name
+  region  = var.region
+}
+
+resource "google_compute_project_default_network_tier" "default" {
+  network_tier = "STANDARD"
+}
+
+resource "google_compute_router_nat" "nat" {
+  name                               = "nat-gateway"
+  router                             = google_compute_router.router.name
+  region                             = google_compute_router.router.region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+
+  log_config {
+    enable = false
+    filter = "ERRORS_ONLY"
+  }
+}
+
+
 data "google_compute_subnetwork" "subnetwork" {
   name       = var.subnetwork
   project    = var.project_id
@@ -82,7 +106,7 @@ module "gke" {
   ip_range_pods           = var.ip_range_pods_name
   ip_range_services       = var.ip_range_services_name
   create_service_account  = true
-  enable_private_endpoint = true
+  enable_private_endpoint = false
   enable_private_nodes    = true
   master_ipv4_cidr_block  = "172.16.0.0/28"
   deletion_protection     = false
@@ -91,6 +115,10 @@ module "gke" {
     {
       cidr_block   = data.google_compute_subnetwork.subnetwork.ip_cidr_range
       display_name = "VPC"
+    },
+    {
+      cidr_block   = "0.0.0.0/0"
+      display_name = "allow all"
     },
   ]
 }
