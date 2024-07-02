@@ -64,10 +64,13 @@ resource "google_compute_router" "router" {
   name    = "nat-router"
   network = module.gcp-network.network_name
   region  = var.region
+  project = var.project_id
 }
 
 resource "google_compute_project_default_network_tier" "default" {
   network_tier = "STANDARD"
+  project      = var.project_id
+
 }
 
 resource "google_compute_router_nat" "nat" {
@@ -76,6 +79,7 @@ resource "google_compute_router_nat" "nat" {
   region                             = google_compute_router.router.region
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+  project                            = var.project_id
 
   log_config {
     enable = false
