@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "20m"
+          limits:
+            memory: "16Mi"
+            cpu: "20m"
+      nodeSelector:
+        ghn.vn/critical-service: "true"
+        ghn.vn/spotable-service: "true"
+        ghn.vn/team: "true"
+        ghn.vn/environment: "true"
+
+      tolerations:
+        - key: "ghn.vn/critical-service"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+        - key: "ghn.vn/spotable-service"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+        - key: "ghn.vn/team"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+        - key: "ghn.vn/environment"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+        #TODO: next try 51 49; 52 48; 53 47
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 90
+              preference:
+                matchExpressions:
+                  - key: ghn.vn/standard
+                    operator: DoesNotExist
+            - weight: 10
+              preference:
+                matchExpressions:
+                  - key: ghn.vn/standard
+                    operator: Exists

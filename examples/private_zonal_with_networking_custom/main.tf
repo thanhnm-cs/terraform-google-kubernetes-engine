@@ -221,11 +221,11 @@ locals {
   namespace = "proxy"
 }
 
-resource "kubernetes_namespace" "nginx-example" {
-  metadata {
-    name = local.namespace
-  }
-}
+# resource "kubernetes_namespace" "nginx-example" {
+#   metadata {
+#     name = local.namespace
+#   }
+# }
 
 # resource "kubernetes_replication_controller" "nginx-example" {
 #   metadata {
