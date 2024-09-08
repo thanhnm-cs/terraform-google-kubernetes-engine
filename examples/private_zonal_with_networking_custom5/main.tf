@@ -95,6 +95,10 @@ data "google_compute_subnetwork" "subnetwork" {
   depends_on = [module.gcp-network]
 }
 
+#terraform create Google Service Account for GKE
+
+
+
 module "gke" {
   source  = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
   version = "~> 31.0"
@@ -131,12 +135,12 @@ module "gke" {
   node_pools = [
     {
       name         = "pool-01"
-      machine_type = "e2-medium"
+      machine_type = "e2-micro"
       # node_locations            = "${var.region}-b,${var.region}-a"
-      autoscaling = true
-      # node_count   = 0
+      autoscaling  = true
+      node_count   = 0
       min_count    = 0
-      max_count    = 10
+      max_count    = 0
       disk_type    = "pd-standard"
       disk_size_gb = 10
       auto_upgrade = true
@@ -146,10 +150,10 @@ module "gke" {
       name         = "pool-02"
       machine_type = "e2-medium"
       #node_locations            = "${var.region}-b,${var.region}-a"
-      autoscaling = true
-      # node_count   = 0
+      autoscaling  = true
+      node_count   = 0
       min_count    = 0
-      max_count    = 10
+      max_count    = 0
       disk_type    = "pd-standard"
       disk_size_gb = 10
       auto_upgrade = true
@@ -213,6 +217,13 @@ module "gke" {
 
   #   ]
   # }
-
-
 }
+
+// add role to exisiting gke service account above
+resource "google_project_iam_member" "gke_service_account" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${module.gke.service_account}"
+}
+
+  
