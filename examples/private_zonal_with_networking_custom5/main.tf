@@ -109,18 +109,23 @@ module "gke" {
   region     = var.region
   zones      = slice(var.zones, 0, 1)
 
-  network                              = module.gcp-network.network_name
-  subnetwork                           = module.gcp-network.subnets_names[0]
-  ip_range_pods                        = var.ip_range_pods_name
-  ip_range_services                    = var.ip_range_services_name
-  enable_cost_allocation               = true
+  network                = module.gcp-network.network_name
+  subnetwork             = module.gcp-network.subnets_names[0]
+  ip_range_pods          = var.ip_range_pods_name
+  ip_range_services      = var.ip_range_services_name
+  enable_cost_allocation = true
+
   monitoring_enable_managed_prometheus = true
-  create_service_account               = true
-  enable_private_endpoint              = false
-  enable_private_nodes                 = true
-  master_ipv4_cidr_block               = "172.16.0.0/28"
-  deletion_protection                  = false
-  remove_default_node_pool             = true
+  monitoring_service                   = "monitoring.googleapis.com/beta"
+  monitoring_enabled_components        = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER", "STORAGE", "HPA", "POD", "DAEMONSET", "DEPLOYMENT", "STATEFULSET", "KUBELET", "CADVISOR", "DCGM"]
+
+
+  create_service_account   = true
+  enable_private_endpoint  = false
+  enable_private_nodes     = true
+  master_ipv4_cidr_block   = "172.16.0.0/28"
+  deletion_protection      = false
+  remove_default_node_pool = true
   master_authorized_networks = [
     {
       cidr_block   = data.google_compute_subnetwork.subnetwork.ip_cidr_range
@@ -135,12 +140,12 @@ module "gke" {
   node_pools = [
     {
       name         = "pool-01"
-      machine_type = "e2-micro"
+      machine_type = "e2-medium"
       # node_locations            = "${var.region}-b,${var.region}-a"
       autoscaling  = true
       node_count   = 0
       min_count    = 0
-      max_count    = 0
+      max_count    = 10
       disk_type    = "pd-standard"
       disk_size_gb = 10
       auto_upgrade = true
@@ -153,7 +158,7 @@ module "gke" {
       autoscaling  = true
       node_count   = 0
       min_count    = 0
-      max_count    = 0
+      max_count    = 10
       disk_type    = "pd-standard"
       disk_size_gb = 10
       auto_upgrade = true
@@ -226,4 +231,4 @@ resource "google_project_iam_member" "gke_service_account" {
   member  = "serviceAccount:${module.gke.service_account}"
 }
 
-  
+
